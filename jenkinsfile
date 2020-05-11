@@ -1,0 +1,41 @@
+def WSAffairesHorsProd = ''
+def WSAffairesProd = ''
+pipeline {
+    agent any 
+    stages {
+
+        stage('Build') {
+			    steps {
+					script {
+						  WSAffairesProd = sh(returnStdout: true, script: 'openssl s_client -servername ws-affaires.edf.com -connect ws-affaires.edf.com:443 2>/dev/null | openssl x509 -noout -dates | grep -v Before')
+						  
+						  WSAffairesHorsProd = sh(returnStdout: true, script: 'openssl s_client -servername ws-affaires-recette-1.edf.com -connect ws-affaires-recette-1.edf.com:443 2>/dev/null | openssl x509 -noout -dates | grep -v Before')
+						  echo "Date de validité du certificat WS-AFFAIRES en production : $WSAffairesHorsProd"
+						  echo "Date de validité du certificat WS-AFFAIRES hors production : : $WSAffairesHorsProd"
+
+ 						  WSParticuliersProd = sh(returnStdout: true, script: 'openssl s_client -servername ws-particuliers.edf.com -connect ws-particuliers-recette-2.edf.com:443 2>/dev/null | openssl x509 -noout -dates | grep -v Before')
+						  
+						  WSParticuliersHorsProd = sh(returnStdout: true, script: 'openssl s_client -servername ws-particuliers-recette-2.edf.com -connect ws-particuliers-recette-2.edf.com:443 2>/dev/null | openssl x509 -noout -dates | grep -v Before')
+						  echo "Date de validité du certificat WS-PARTICULIERS en production : $WSParticuliersProd"
+						  echo "Date de validité du certificat WS-PARTICULIERS hors production : : $WSParticuliersHorsProd"
+
+ 						  APIParticuliersProd = sh(returnStdout: true, script: 'openssl s_client -servername api-particuliers.edf.com -connect api-particuliers-recette-2.edf.com:443 2>/dev/null | openssl x509 -noout -dates | grep -v Before')
+						  
+						  APIParticuliersHorsProd = sh(returnStdout: true, script: 'openssl s_client -servername api-particuliers-recette-2.edf.com -connect api-particuliers-recette-2.edf.com:443 2>/dev/null | openssl x509 -noout -dates | grep -v Before')
+						  echo "Date de validité du certificat API-PARTICULIERS en production : $WSParticuliersProd"
+						  echo "Date de validité du certificat API-PARTICULIERS hors production : : $WSParticuliersHorsProd"
+					
+						}
+
+					emailext(
+					    to: 'seddikyesguer@yahoo.fr',
+					    body: "<STYLE>table,td {border: 1px solid #333;} thead,tfoot {background-color: #333;color: #fff;}p { text-align: center }table{margin:auto;}</STYLE><p><h1><center>Supervision des certificats FHM</center></h1></p></br><table><thead><tr><td></td><td>WS-AFFAIRES</td><td>WS-PARTICULIERS</td><td>API-PARTICULIERS</td></tr></thead><tbody><tr><td>Prod</td><td>$WSAffairesProd</td><td>$WSParticuliersProd</td><td>$APIParticuliersProd</td></tr><tr><td>Hors Prod</td><td>$WSAffairesHorsProd</td><td>$WSParticuliersHorsProd</td><td>$APIParticuliersHorsProd</td></tr></tbody></table>",
+					    mimeType: 'text/html',
+					    subject: '[FHM] - Supervision des certificats server',
+					    replyTo: 'noreply@edf.com'    
+						)
+			       
+				}
+                        }
+        }
+    }
